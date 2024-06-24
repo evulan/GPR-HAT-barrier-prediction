@@ -1,0 +1,31 @@
+repos:
+- repo: https://github.com/psf/black
+  rev: 24.4.2
+  hooks:
+  - id: black-jupyter      # Run Black - the uncompromising Python code formatter (Jupyter version)
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+  - id: end-of-file-fixer      # Ensure existence of newline characters at file ends
+  - id: check-yaml      # Make sure that contained YAML files are well-formed
+  - id: trailing-whitespace      # Trim trailing whitespace of all sorts
+  - id: check-added-large-files      # Apply a file size limit of 500kB
+  - id: check-json      # Check validity of JSON files
+  - id: pretty-format-json      # Format JSON files consistently
+    exclude_types:
+    - jupyter
+    args:
+    - --autofix
+  - id: mixed-line-ending      # Ensure consistent line endings
+
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.7.1
+  hooks:
+  - id: nbstripout     # Make sure that Jupyter notebooks under version control have their outputs stripped before committing
+    files: .ipynb
+
+- repo: https://github.com/pecigonzalo/pre-commit-shfmt
+  rev: v2.2.0
+  hooks:
+  - id: shell-fmt-go      # Format Bash scripts
