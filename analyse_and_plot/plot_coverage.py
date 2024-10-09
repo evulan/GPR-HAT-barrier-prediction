@@ -125,7 +125,7 @@ def plot_empirical_coverage(
         if mode == "gaussian":
             l, u = get_bounds_gaussian(alpha, Y_predict, sigma)
         elif mode == "tdistrib":
-            l, u = get_bounds_tdistrib(alpha, Y_predict, sigma, df=9)
+            l, u = get_bounds_tdistrib(alpha, Y_predict, sigma, df=10)
         empirical_coverage[i] = interval_score(
             alpha=alpha, Y_true=Y_true, Y_predict=Y_predict, l=l, u=u
         )[-1]
@@ -272,7 +272,7 @@ def average_interval_score_table(
                 if modes[model_i] == "gaussian":
                     l, u = get_bounds_gaussian(alpha, Y_predict, sigma)
                 elif modes[model_i] == "tdistrib":
-                    l, u = get_bounds_tdistrib(alpha, Y_predict, sigma, df=9)
+                    l, u = get_bounds_tdistrib(alpha, Y_predict, sigma, df=10)
                 S[alpha_i][model_i][seed_i] = interval_score(
                     alpha=alpha, Y_true=Y_true, Y_predict=Y_predict, l=l, u=u
                 )[1]

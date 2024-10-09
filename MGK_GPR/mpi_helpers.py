@@ -5,7 +5,7 @@ from graph_helpers import all_atoms_to_networkx
 from datetime import datetime
 
 
-def mpi_networks(df, rank, comm, size, config):
+def mpi_networks(df, rank, comm, size, config, ignore_side_feature=False):
     """
     Create networkx graphs from atoms objects in distributed and parallel fashion
 
@@ -33,6 +33,7 @@ def mpi_networks(df, rank, comm, size, config):
         r_cut=config["r_cut"],
         neigh_max=config["neigh_max"],
         HR_radius=config["HR_radius"],
+        ignore_side_feature=ignore_side_feature,
     )
 
     # All ranks except for the root rank (0) send their graphs to the root rank

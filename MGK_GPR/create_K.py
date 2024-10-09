@@ -10,7 +10,6 @@ from pathlib import Path
 import sys
 
 sys.path.append(str(Path.cwd().parent.resolve()))
-import general.GPR_helper as gpr
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -30,12 +29,22 @@ except Exception as e:
     print(rank, MPI.Get_processor_name(), e)
     raise Exception
 
+ignore_side_feature = False
+# ignore_side_feature = True
+
 # The kernel to use for nodes/atoms
-knode = TensorProduct(
-    atomic_number=KroneckerDelta(0.8),
-    special_type=KroneckerDelta(0.2),
-    alpha=SquareExponential(1.0),
-)
+
+if not ignore_side_feature:
+    knode = TensorProduct(
+        atomic_number=KroneckerDelta(0.8),
+        special_type=KroneckerDelta(0.2),
+        alpha=SquareExponential(1.0),
+    )
+else:
+    knode = TensorProduct(
+        atomic_number=KroneckerDelta(0.8),
+        special_type=KroneckerDelta(0.2),
+    )
 
 # The kernel to use for edges
 kedge = TensorProduct(
@@ -50,11 +59,11 @@ config = dict(
     kedge=str(kedge),  # edge kernel
     p_q=0.05,  # end probability
     n_split=10,  # number of blocks to use for MPI in one dimension, i.e. n_split * n_split = total num of blocks
-    collect_networks_save="collect_networks_diff.pkl",  # save file name of the graphs that were created from the atoms
+    K_save=f"K.npy",  # File where to save kernel matrix
     df_save=f"df_MGK.pkl",  # modified atoms dataframe used for the creation
+    collect_networks_save="collect_networks_diff.pkl",  # save file name of the graphs that were created from the atoms
     workers=size,  # number of workers
     n_max=None,  # maximum number of transitions to use for testing. Use None to use all
-    K_save=f"K.npy",  # File where to save kernel matrix
     normalise_K=True,  # Whether to normalize K
 )
 
@@ -81,7 +90,7 @@ print("Start Time:", datetime.now().strftime("%H:%M:%S"), flush=True)
 tic = time.time()
 
 # Create networkx graphs from atom structures using multiple nodes
-collect_networks = mpi_networks(df, rank, comm, size, config)
+collect_networks = mpi_networks(df, rank, comm, size, config, ignore_side_feature)
 
 # Create GraphDot graphs from networkx graphs
 graphs = [Graph.from_networkx(m, weight="w") for m in collect_networks.graph]

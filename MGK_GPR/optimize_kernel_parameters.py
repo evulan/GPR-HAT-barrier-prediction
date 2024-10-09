@@ -16,12 +16,15 @@ import pandas as pd
 from pprint import pprint
 import uuid
 from sklearn import preprocessing
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 
 config = dict(
     K_graph="K.npy",  # Kernel matrix previously calculated with GraphDot
     df_load=f"collect_networks_diff.pkl",  # dataframe based on which K was calculated
+    save_df_test=f"results/df_MGK_predictions.pkl",  # save predictions to this dataframe
+    creation_config="creation_config.txt",  # configuration file log
+    plot_save="results/prediction.png",  # prediction plot for sanity check
     run_config=dict(
         jitter=1e-10, n_split=3
     ),  # Jitter term and number of blocks to split kernel matrix
@@ -32,8 +35,6 @@ config = dict(
             "sigma": 1.0,
         },
     },
-    save_df_test=f"results/df_MGK_predictions.pkl",  # save predictions to this dataframe
-    creation_config="creation_config.txt",  # configuration file log
     seed=0,  # random seed for reproducibility
     test_d_bounds=[
         0.0,
@@ -53,7 +54,6 @@ config = dict(
     validation={
         "n_train": "all_sequential"
     },  # How many training points to use. "all_sequential" to use all
-    plot_save="results/prediction.png",  # prediction plot for sanity check
     predict_uncertainty=False,  # Whether uncertainty estimate should be predicted
 )
 
@@ -353,4 +353,16 @@ print(
 )
 print(
     f"2A  traj: {mean_absolute_error(df_test_traj[df_test_traj.d <= 2].E_barrier, df_test_traj[df_test_traj.d <= 2].E_barrier_predict):.2f} kcal/mol"
+)
+
+print("ROOT MEAN SQUARE ERROR")
+print("Traj test scores:")
+print(
+    f"ALL traj: {root_mean_squared_error(df_test_traj.E_barrier, df_test_traj.E_barrier_predict):.2f} kcal/mol"
+)
+print(
+    f"3A  traj: {root_mean_squared_error(df_test_traj[df_test_traj.d <= 3].E_barrier, df_test_traj[df_test_traj.d <= 3].E_barrier_predict):.2f} kcal/mol"
+)
+print(
+    f"2A  traj: {root_mean_squared_error(df_test_traj[df_test_traj.d <= 2].E_barrier, df_test_traj[df_test_traj.d <= 2].E_barrier_predict):.2f} kcal/mol"
 )

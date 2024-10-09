@@ -98,6 +98,15 @@ for i_frac, frac in enumerate(fracs_GPR_traj):
         Y_predict_GPR_traj_per_seed[i_frac, i_seed] = E_predict
         sigma_GPR_traj_per_seed[i_frac, i_seed] = Sigma_predict
 
+print(f"Sanity check:")
+print(
+    f"MAE GPR Both: {mean_absolute_error(Y_true, Y_predict_GPR_both_per_seed[0, 0]):.2f}"
+)
+print(
+    f"MAE GPR Traj: {mean_absolute_error(Y_true, Y_predict_GPR_traj_per_seed[0, 0]):.2f}"
+)
+print(f"MAE PaiNN: {mean_absolute_error(Y_true, Y_predict_PaiNN_per_seed[0, 0]):.2f}")
+
 
 # Scoring rules for different distributions
 def crps_gaussian(ys_true, means_predict, sigmas_predict):
@@ -145,7 +154,7 @@ def logS_gaussian(ys_true, means_predict, sigmas_predict):
 def logS_tdistrib(ys_true, means_predict, sigmas_predict, n):
     """(negatively oriented) Logarithmic score for Student’s t-distribution"""
     return -stats.t.logpdf(
-        ys_true, df=n - 1, loc=means_predict, scale=sigmas_predict
+        ys_true, df=n, loc=means_predict, scale=sigmas_predict
     ).mean()
 
 
@@ -248,7 +257,7 @@ for i_frac in range(fracs_PaiNN.size):
                 Y_true,
                 Y_predict_PaiNN_per_seed[i_frac, seed_i],
                 sigmas_PaiNN_per_seed[i_frac, seed_i],
-                nu=9,
+                nu=10,
             )
             for seed_i in seeds
         ]
@@ -339,16 +348,18 @@ y_true_all_seeds = np.tile(Y_true.flatten(), seeds.size)
 
 PIT_gaussian(
     y_true=y_true_all_seeds,
-    means_predict=Y_predict_GPR_traj_per_seed[0].flatten(),
+    means_predict=Y_predict_GPR_both_per_seed[0].flatten(),
     sigmas_predict=sigma_GPR_both_per_seed[0].flatten(),
     ax=ax,
     color=color_GPR_both,
     label=r"$\mathregular{SOAP_{Full}}$",
 )
-ax.hlines(1.0, *ax.get_xlim(), ls="--", color="black", lw=5, label="ideal", zorder=10)
+print(
+    f"Sanity check: MAE GPR Both: {mean_absolute_error(Y_true, Y_predict_GPR_both_per_seed[0, 0]):.2f}"
+)
 PIT_gaussian(
     y_true=y_true_all_seeds,
-    means_predict=Y_predict_GPR_both_per_seed[0].flatten(),
+    means_predict=Y_predict_GPR_traj_per_seed[0].flatten(),
     sigmas_predict=sigma_GPR_traj_per_seed[0].flatten(),
     ax=ax,
     color=color_GPR_traj,
@@ -356,7 +367,9 @@ PIT_gaussian(
     linestyle=(0, (1, 1)),
     label=r"$\mathregular{SOAP_{Traj}}$",
 )
-
+print(
+    f"Sanity check: MAE GPR Both: {mean_absolute_error(Y_true, Y_predict_GPR_traj_per_seed[0, 0]):.2f}"
+)
 PIT_tdistrib(
     y_true=y_true_all_seeds,
     means_predict=Y_predict_PaiNN_per_seed[0].flatten(),
@@ -365,6 +378,10 @@ PIT_tdistrib(
     color=color_PaiNN,
     label=r"$\mathregular{PaiNN_{Ens}}$",
 )
+print(
+    f"Sanity check: MAE GPR Both: {mean_absolute_error(Y_true, Y_predict_PaiNN_per_seed[0, 0]):.2f}"
+)
+ax.hlines(1.0, *ax.get_xlim(), ls="--", color="black", lw=5, label="ideal", zorder=10)
 
 ax.spines[["right", "top"]].set_visible(False)
 

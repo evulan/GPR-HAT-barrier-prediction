@@ -1,12 +1,29 @@
-"""Plot the predictions for the trajectory test set for GPR SOAP, GPR MGK and PaiNN"""
+"""barrier_errors_vs_predicted_barriers"""
 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 from pathlib import Path
+import pandas as pd
+import sys
+
+sys.path.append(str(Path.cwd().parent.parent.resolve()))
+sys.path.append(str(Path.cwd().parent.resolve()))
+
 import matplotlib as mpl
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
-from scipy import stats
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+
+
+def get_R2(y_true, y_pred):
+    return 1 - (((y_true - y_pred) ** 2).sum() / ((y_true - y_true.mean()) ** 2).sum())
+
+
+def get_corr(y_true, y_pred):
+    numerator = ((y_true - y_true.mean()) * (y_pred - y_pred.mean())).sum()
+    denominator = np.sqrt(
+        ((y_true - y_true.mean()) ** 2).sum() * ((y_pred - y_pred.mean()) ** 2).sum()
+    )
+    return numerator / denominator
+
 
 cwd = Path(__file__).resolve().parent
 project_root = cwd.parent
@@ -68,7 +85,9 @@ Y_predict_PaiNN_per_seed = np.mean(predictions_PaiNN, axis=1)
 Y_predict_PaiNN = Y_predict_PaiNN_per_seed[seed_to_use["PaiNN"]]
 print(f"MAE  PaiNN: {mean_absolute_error(Y_true, Y_predict_PaiNN):.2f} kcal/mol")
 print(f"RMSE PaiNN: {root_mean_squared_error(Y_true, Y_predict_PaiNN):.2f} kcal/mol")
-print(f"R2   PaiNN: {r2_score(Y_true, Y_predict_PaiNN):.2f}")
+print(f"R2   PaiNN: {get_R2(Y_true, Y_predict_PaiNN):.2f}")
+print(f"corr PaiNN: {get_corr(Y_true, Y_predict_PaiNN):.2f}")
+
 
 # GPR SOAP
 lookup_GPR_SOAP = lookup_GPR_SOAP[np.isclose(lookup_GPR_SOAP["frac"], 1.0)]
@@ -90,26 +109,15 @@ for i_seed, seed in enumerate(seeds):
 Y_predict_GPR_SOAP = Y_predict_GPR_SOAP_per_seed[seed_to_use["GPR_SOAP"]]
 print(f"MAE  SOAP : {mean_absolute_error(Y_true, Y_predict_GPR_SOAP):.2f} kcal/mol")
 print(f"RMSE SOAP: {root_mean_squared_error(Y_true, Y_predict_GPR_SOAP):.2f} kcal/mol")
-print(f"R2   SOAP: {r2_score(Y_true, Y_predict_GPR_SOAP):.2f}")
+print(f"R2   SOAP: {get_R2(Y_true, Y_predict_GPR_SOAP):.2f}")
+print(f"corr SOAP: {get_corr(Y_true, Y_predict_GPR_SOAP):.2f}")
 
 # GPR marginalized_graph_kernel
 Y_predict_GPR_MGK = df_MGK["E_barrier_predict"].to_numpy().astype(float)[mask]
 print(f"MAE  MGK  : {mean_absolute_error(Y_true, Y_predict_GPR_MGK):.2f} kcal/mol")
 print(f"RMSE MGK: {root_mean_squared_error(Y_true, Y_predict_GPR_MGK):.2f} kcal/mol")
-print(f"R2   MGK: {r2_score(Y_true, Y_predict_GPR_MGK):.2f}")
-
-SOAP_MAE = mean_absolute_error(Y_true, Y_predict_GPR_SOAP)
-SOAP_RMSE = root_mean_squared_error(Y_true, Y_predict_GPR_SOAP)
-SOAP_R2 = r2_score(Y_true, Y_predict_GPR_SOAP)
-
-MGK_MAE = mean_absolute_error(Y_true, Y_predict_GPR_MGK)
-MGK_RMSE = root_mean_squared_error(Y_true, Y_predict_GPR_MGK)
-MGK_R2 = r2_score(Y_true, Y_predict_GPR_MGK)
-
-PaiNN_MAE = mean_absolute_error(Y_true, Y_predict_PaiNN)
-PaiNN_RMSE = root_mean_squared_error(Y_true, Y_predict_PaiNN)
-PaiNN_R2 = r2_score(Y_true, Y_predict_PaiNN)
-
+print(f"R2   MGK: {get_R2(Y_true, Y_predict_GPR_MGK):.2f}")
+print(f"corr MGK: {get_corr(Y_true, Y_predict_GPR_MGK):.2f}")
 
 # Plot
 color_PaiNN = "#ea7317"
@@ -123,117 +131,54 @@ plot_properties = {
     "xtick.major.width": 2,
     "ytick.major.width": 2,
     "axes.linewidth": 2,
-    "legend.fontsize": 18,
+    "legend.fontsize": 24,
 }
 mpl.rcParams.update(plot_properties)
-fig, ax = plt.subplots(figsize=(10, 10))
-
-ax.grid(True, alpha=0.2)
-
-
-ax.scatter(
-    Y_true,
-    Y_predict_GPR_SOAP,
-    s=30,
-    marker="o",
-    alpha=0.7,
-    linewidths=0.5,
-    color=color_GPR_SOAP,
-    edgecolors="black",
-    label=r"$\mathregular{SOAP_{Full}}$"
-    + f"\n(MAE: {SOAP_MAE:.2f}, RMSE: {SOAP_RMSE:.2f}, R2: {SOAP_R2:.2f})",
-    zorder=3,
-)
-ax.scatter(
-    Y_true,
-    Y_predict_GPR_MGK,
-    s=30,
-    marker="o",
-    alpha=0.7,
-    linewidths=0.5,
-    color=color_GPR_MGK,
-    edgecolors="black",
-    label="MGK" + f"\n(MAE: {MGK_MAE:.2f}, RMSE: {MGK_RMSE:.2f}, R2: {MGK_R2:.2f})",
-    zorder=0,
-)
-ax.scatter(
-    Y_true,
-    Y_predict_PaiNN,
-    s=30,
-    marker="s",
-    alpha=0.7,
-    linewidths=0.5,
-    color=color_PaiNN,
-    edgecolors="black",
-    label=r"$\mathregular{PaiNN_{Ens}}$"
-    + f"\n(MAE: {PaiNN_MAE:.2f}, RMSE: {PaiNN_RMSE:.2f}, R2: {PaiNN_R2:.2f})",
-    zorder=1,
-)
-
-ax.set_aspect("equal", "box")
-ax.set_xlabel(r"$\Delta E^{True}$ [kcal/mol]")
-ax.set_ylabel(r"$\Delta E^{Predicted}$ [kcal/mol]")
-
-ax_min = np.min([Y_true, Y_predict_PaiNN, Y_predict_GPR_SOAP, Y_predict_GPR_MGK])
-ax_max = np.max([Y_true, Y_predict_PaiNN, Y_predict_GPR_SOAP, Y_predict_GPR_MGK])
-
-ax.set_xlim(20, 150)
-ax.set_ylim(20, 150)
-
-# Check that no point is outside limits
-assert (
-    ax_min >= ax.get_xlim()[0]
-    and ax_max <= ax.get_xlim()[1]
-    and ax_min >= ax.get_ylim()[0]
-    and ax_max <= ax.get_ylim()[1]
-)
-
-ticks = np.arange(ax.set_xlim()[0], ax.set_xlim()[1] + 0.1, 10)
-ax.set_xticks(ticks)
-ax.set_xticklabels(ticks.astype(int), rotation=-45)
-ax.set_yticks(ticks)
-ax.set_yticklabels(ticks.astype(int), rotation=0)
-diag = np.linspace(np.max([ax.get_xlim()[0], 0.0]), ax.get_xlim()[1], 1000)
-ax.plot(diag, diag, color="black", ls="--", zorder=0, lw=2)
-ax.legend(loc="upper left", ncol=1, borderaxespad=0, frameon=False, markerscale=3)
-
-print(f"Save fig ({save_fig_loc.resolve()}) and show")
-plt.tight_layout()
-plt.savefig(save_fig_loc, dpi=400, bbox_inches="tight")
-plt.show()
-
+fig, axes = plt.subplots(3, 1, figsize=(10, 18), sharex=True, sharey=True)
 
 # Errors
-fig, ax = plt.subplots(figsize=(10, 10))
+df_pred = pd.DataFrame(
+    {
+        "Y_true": Y_true.flatten(),
+        "Y_GPR": Y_predict_GPR_SOAP.flatten(),
+        "Y_painn": Y_predict_PaiNN.flatten(),
+        "Y_MGK": Y_predict_GPR_MGK.flatten(),
+    }
+)
 
-ax.grid(True, alpha=0.2)
+colors = [color_GPR_SOAP, color_GPR_MGK, color_PaiNN]
+pred_cols = ["Y_GPR", "Y_MGK", "Y_painn"]
+titles = ["GPR SOAP", "GPR MGK", "GNN PaiNN"]
 
-residuals_GPR_SOAP = np.abs(Y_true.flatten() - Y_predict_GPR_SOAP.flatten())
-residuals_PaiNN = np.abs(Y_true.flatten() - Y_predict_PaiNN.flatten())
-residuals_MGK = np.abs(Y_true.flatten() - Y_predict_GPR_MGK.flatten())
+for i_axes, ax in enumerate(axes.flatten()):
 
-res_GPR_SOAP = stats.ecdf(residuals_GPR_SOAP)
-res_GPR_PaiNN = stats.ecdf(residuals_PaiNN)
-res_GPR_MGK = stats.ecdf(residuals_MGK)
+    pred_col = pred_cols[i_axes]
+    res_col = f"res_{pred_col}"
+    res_col_mean = f"res_{pred_col}_mean"
+    res_col_std = f"res_{pred_col}_std"
+    df_pred.sort_values(pred_col, inplace=True)
+    df_pred[res_col] = df_pred[pred_col] - df_pred["Y_true"]
+    df_pred[res_col_std] = df_pred[res_col].rolling(window=30, center=True).std()
+    df_pred[res_col_mean] = df_pred[res_col].rolling(window=30, center=True).mean()
 
-ax = plt.subplot()
-(line,) = res_GPR_SOAP.cdf.plot(ax)
-line.set_label("GPR SOAP")
-line.set_color(color_GPR_SOAP)
+    ax.scatter(df_pred[pred_col], df_pred[res_col], color=colors[i_axes], s=15)
 
-(line,) = res_GPR_PaiNN.cdf.plot(ax)
-line.set_label("PaiNN Ensemble")
-line.set_color(color_PaiNN)
+    ax.fill_between(
+        df_pred[pred_col],
+        df_pred[res_col_mean] - df_pred[res_col_std],
+        df_pred[res_col_mean] + df_pred[res_col_std],
+        color="black",
+        alpha=0.3,
+    )  # , step="mid"
+    ax.plot(df_pred[pred_col], df_pred[res_col_mean], "-", lw=3, color="black")
 
-(line,) = res_GPR_MGK.cdf.plot(ax)
-line.set_label("MGK")
-line.set_color(color_GPR_MGK)
+    if i_axes == axes.size - 1:
+        ax.set_xlabel(r"$\Delta E_{\text{Predicted}}$")
+    ax.set_ylabel(r"$\Delta E_{\text{Predicted}}-\Delta E_{\text{True}}$")
+    ax.set_title(f"{titles[i_axes]}")
 
-ax.legend()
-ax.set_xscale("log")
-ax.set_xlabel(r"$|\Delta E^{predict}_i-\Delta E^{true}_i|$ [kcal/mol]")
-ax.set_ylabel("Empirical CDF")
-ax.set_title("Error distribution Trajectory Test Set")
+    ax.grid(True, alpha=0.2)
+
 plt.tight_layout()
-plt.savefig(cwd / "figures" / "empirical_cdf_predictions", dpi=400, bbox_inches="tight")
+plt.savefig(cwd / "figures" / "residuals_spread.png", bbox_inches="tight", dpi=300)
 plt.show()

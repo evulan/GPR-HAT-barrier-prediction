@@ -5,7 +5,12 @@ from ase import neighborlist, Atom
 
 
 def all_atoms_to_networkx(
-    df, r_cut=20, neigh_max=5, HR_radius=15, collect_pruned=False
+    df,
+    r_cut=20,
+    neigh_max=5,
+    HR_radius=15,
+    collect_pruned=False,
+    ignore_side_feature=False,
 ):
     """
     Main function which creates networkx graphs from atoms dataframe
@@ -71,6 +76,7 @@ def all_atoms_to_networkx(
                 neigh_max=neigh_max,
                 HR_radius=HR_radius,
                 collect_pruned=collect_pruned,
+                ignore_side_feature=ignore_side_feature,
             )
 
             graph_hash = nx.weisfeiler_lehman_graph_hash(graph)
@@ -125,7 +131,14 @@ def all_atoms_to_networkx(
         return df, pruned_atoms_collector
 
 
-def to_networkx(atoms, r_cut=15, neigh_max=5, HR_radius=5, collect_pruned=False):
+def to_networkx(
+    atoms,
+    r_cut=15,
+    neigh_max=5,
+    HR_radius=5,
+    collect_pruned=False,
+    ignore_side_feature=False,
+):
     """
     Creates a networkx graph from atoms object
 
@@ -217,8 +230,10 @@ def to_networkx(atoms, r_cut=15, neigh_max=5, HR_radius=5, collect_pruned=False)
         attributes = dict(
             atomic_number=a,
             special_type=special_type,
-            alpha=alpha,
         )
+        if not ignore_side_feature:
+            attributes["alpha"] = alpha
+
         # Add the new node with attributes
         atoms_graph.add_node(node_for_adding=i, **attributes)
 

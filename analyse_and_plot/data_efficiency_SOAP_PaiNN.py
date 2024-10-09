@@ -6,6 +6,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy.optimize import curve_fit
+from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
 from matplotlib.ticker import StrMethodFormatter, NullFormatter
 from pathlib import Path
 
@@ -124,9 +125,12 @@ def get_loglog_fit(fs, maes, sigma, n_max, lim=None, name=""):
 
     n_threshold = estimate_n_threshold(a, k, target_MAE=2)
     factor_threshold = n_threshold / n_max
+    y_predict = power(ns, *popt)
+    y_true = maes
     print(
         f"Best fit: a={a:.1f} \u00b1 {err_a:.1f}, k={k:.3f} \u00b1 {err_k:.3f}, "
-        f"target n: {np.round(n_threshold, -3)} (factor: {factor_threshold:.1f}) for {name}"
+        f"target n: {np.round(n_threshold, -3)} (factor: {factor_threshold:.1f}) for {name}, "
+        f"(Fit MAE: {mean_absolute_error(y_true, y_predict):.2f}, Fit RMSE: {root_mean_squared_error(y_true, y_predict):.2f}, Fit R2: {r2_score(y_true, y_predict):.2f})"
     )
     return (a, k), f_plot, mae_plot
 
