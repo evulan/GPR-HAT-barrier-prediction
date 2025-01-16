@@ -126,7 +126,32 @@ plot_properties = {
     "legend.fontsize": 18,
 }
 mpl.rcParams.update(plot_properties)
-fig, ax = plt.subplots(figsize=(10, 10))
+
+fig = plt.figure(layout="constrained", figsize=(10, 12))
+ax = fig.add_gridspec().subplots()
+ax.set(aspect=1)
+ax_hist = ax.inset_axes([0, 1.01, 1, 0.15], sharex=ax)
+ax_hist.spines["top"].set_visible(False)
+ax_hist.spines["right"].set_visible(False)
+ax_hist.spines["bottom"].set_visible(False)
+ax_hist.spines["left"].set_visible(False)
+ax_hist.get_xaxis().set_visible(False)
+ax_hist.get_yaxis().set_visible(False)
+ax_hist.tick_params(axis="x", labelbottom=False)
+binwidth = 5.0
+bins = np.arange(20, 150 + binwidth, binwidth)
+ax_hist.hist(Y_true, bins=bins, edgecolor="black", linewidth=1.2, color="#ffffff00")
+
+CDF_Y_true = stats.ecdf(Y_true)
+print(f"Percentage of E_True above 100 kcal/mol: {1-CDF_Y_true.cdf.evaluate(100):.2%}")
+print(
+    f"Percentage of E_True between 60-50 kcal/mol: {CDF_Y_true.cdf.evaluate(60)-CDF_Y_true.cdf.evaluate(50):.2%}"
+)
+print(f"Median of E_True: {np.median(Y_true):.2f}")
+print(
+    f"Central 90% level interval: [{np.quantile(Y_true, 0.05):.0f}, {np.quantile(Y_true, 0.95):.0f}]"
+)
+print(f"10% quantile: {np.quantile(Y_true, 0.1):.1f}")
 
 ax.grid(True, alpha=0.2)
 
@@ -141,7 +166,8 @@ ax.scatter(
     color=color_GPR_SOAP,
     edgecolors="black",
     label=r"$\mathregular{SOAP_{Full}}$"
-    + f"\n(MAE: {SOAP_MAE:.2f}, RMSE: {SOAP_RMSE:.2f}, R2: {SOAP_R2:.2f})",
+    + f"\n(MAE: {SOAP_MAE:.2f}, RMSE: {SOAP_RMSE:.2f}"
+    + rf", $R^2$: {SOAP_R2:.2f})",
     zorder=3,
 )
 ax.scatter(
@@ -153,7 +179,9 @@ ax.scatter(
     linewidths=0.5,
     color=color_GPR_MGK,
     edgecolors="black",
-    label="MGK" + f"\n(MAE: {MGK_MAE:.2f}, RMSE: {MGK_RMSE:.2f}, R2: {MGK_R2:.2f})",
+    label="MGK"
+    + f"\n(MAE: {MGK_MAE:.2f}, RMSE: {MGK_RMSE:.2f}"
+    + rf", $R^2$: {MGK_R2:.2f})",
     zorder=0,
 )
 ax.scatter(
@@ -166,7 +194,8 @@ ax.scatter(
     color=color_PaiNN,
     edgecolors="black",
     label=r"$\mathregular{PaiNN_{Ens}}$"
-    + f"\n(MAE: {PaiNN_MAE:.2f}, RMSE: {PaiNN_RMSE:.2f}, R2: {PaiNN_R2:.2f})",
+    + f"\n(MAE: {PaiNN_MAE:.2f}, RMSE: {PaiNN_RMSE:.2f}"
+    + rf", $R^2$: {PaiNN_R2:.2f})",
     zorder=1,
 )
 
